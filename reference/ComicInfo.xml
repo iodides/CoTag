@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ComicInfo>
+  <SeriesGroup>My Series Group</SeriesGroup>
+  <Series>My Series</Series>
+  <Title>Sample Title</Title>
+  <Volume>1</Volume>
+  <Number>1</Number>
+  <Year>2025</Year>
+  <Month>9</Month>
+  <Day>3</Day>
+  <Penciller>Author Name</Penciller>
+  <Inker>Author Name</Inker>
+</ComicInfo>
