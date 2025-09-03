@@ -167,7 +167,19 @@ class MainWindow(QtWidgets.QMainWindow):
         self.rename_action.triggered.connect(self.start_rename)
         self.addAction(self.rename_action)
 
-        self._full_pixmap: Optional[QtGui.QPixmap] = None
+        # Ctrl+B / Ctrl+N for previous/next file navigation while editing metadata
+        self.prev_action = QtGui.QAction(self)
+        self.prev_action.setShortcut(QtGui.QKeySequence("Ctrl+B"))
+        self.prev_action.triggered.connect(self.go_prev_file)
+        self.addAction(self.prev_action)
+
+        self.next_action = QtGui.QAction(self)
+        self.next_action.setShortcut(QtGui.QKeySequence("Ctrl+N"))
+        self.next_action.triggered.connect(self.go_next_file)
+        self.addAction(self.next_action)
+
+        # full-size pixmap cache for thumbnail -> full viewer
+        self._full_pixmap = None
 
         self._build_ui()
 
@@ -473,21 +485,42 @@ class MainWindow(QtWidgets.QMainWindow):
         QtWidgets.QMessageBox.information(self, "저장", "저장되었습니다")
 
     def save_all(self):
-        any_saved = False
-        for it in self.files:
-            if not it.dirty:
-                continue
-            root = self._build_xml_from_meta(it, it.meta)
-            ok = write_comicinfo_to_zip(it.path, root)
-            if ok:
-                it.saved_meta = {k: v for k, v in it.meta.items() if v and v != "<개별값>"}
-                it.dirty = False
-                any_saved = True
-        self.refresh_table()
-        if any_saved:
-            QtWidgets.QMessageBox.information(self, "저장", "저장되었습니다")
-        else:
+        # Gather dirty files first
+        dirty_items = [it for it in self.files if it.dirty]
+        total = len(dirty_items)
+        if total == 0:
             QtWidgets.QMessageBox.information(self, "저장", "저장할 변경사항이 없습니다")
+            return
+
+        # Disable save buttons while operating
+        self.btn_save_all.setEnabled(False)
+        self.btn_save.setEnabled(False)
+
+        any_saved = False
+        try:
+            for idx, it in enumerate(dirty_items, start=1):
+                # Update status bar with progress like '(3/16) 저장중...'
+                self.statusBar().showMessage(f"({idx}/{total}) 저장중...")
+                QtWidgets.QApplication.processEvents()
+
+                root = self._build_xml_from_meta(it, it.meta)
+                ok = write_comicinfo_to_zip(it.path, root)
+                if ok:
+                    it.saved_meta = {k: v for k, v in it.meta.items() if v and v != "<개별값>"}
+                    it.dirty = False
+                    any_saved = True
+
+            # final refresh and message
+            self.refresh_table()
+            if any_saved:
+                QtWidgets.QMessageBox.information(self, "저장", "저장되었습니다")
+            else:
+                QtWidgets.QMessageBox.information(self, "저장", "저장할 변경사항이 없습니다")
+        finally:
+            # Restore status and button states
+            self.update_status()
+            self.btn_save_all.setEnabled(any(fi.dirty for fi in self.files))
+            self.btn_save.setEnabled(False)
 
     def _build_xml_from_meta(self, it: FileItem, cur: Dict[str, str]) -> etree._Element:
         root = etree.Element("ComicInfo")
@@ -546,6 +579,50 @@ class MainWindow(QtWidgets.QMainWindow):
             return
         # make sure item is editable and start editing
         self.table.editItem(item)
+
+    def go_next_file(self):
+        """Select the next file in the table (if any)."""
+        try:
+            # Only perform navigation when focus is in one of the metadata fields
+            focus = QtWidgets.QApplication.focusWidget()
+            if not isinstance(focus, QtWidgets.QLineEdit) or focus not in self.fields.values():
+                return
+            rows = sorted({i.row() for i in self.table.selectedIndexes()})
+            if not rows:
+                return
+            row = rows[0]
+            if row >= self.table.rowCount() - 1:
+                return
+            target = row + 1
+            self.table.clearSelection()
+            self.table.selectRow(target)
+            item = self.table.item(target, 1)
+            if item:
+                self.table.scrollToItem(item, QtWidgets.QAbstractItemView.PositionAtCenter)
+        except Exception:
+            return
+
+    def go_prev_file(self):
+        """Select the previous file in the table (if any)."""
+        try:
+            # Only perform navigation when focus is in one of the metadata fields
+            focus = QtWidgets.QApplication.focusWidget()
+            if not isinstance(focus, QtWidgets.QLineEdit) or focus not in self.fields.values():
+                return
+            rows = sorted({i.row() for i in self.table.selectedIndexes()})
+            if not rows:
+                return
+            row = rows[0]
+            if row <= 0:
+                return
+            target = row - 1
+            self.table.clearSelection()
+            self.table.selectRow(target)
+            item = self.table.item(target, 1)
+            if item:
+                self.table.scrollToItem(item, QtWidgets.QAbstractItemView.PositionAtCenter)
+        except Exception:
+            return
 
     def on_table_item_changed(self, item: QtWidgets.QTableWidgetItem):
         # handle rename commits when user edits filename cell (col 1)

@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['D:\\vscode\\CoTag2\\src\\main.py'],
+    ['D:\\vscode\\CoTag\\src\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[('D:\\vscode\\CoTag2\\resource\\CoTag.ico', '.')],
+    datas=[('D:\\vscode\\CoTag\\resource\\CoTag.ico', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['D:\\vscode\\CoTag2\\resource\\CoTag.ico'],
+    icon=['D:\\vscode\\CoTag\\resource\\CoTag.ico'],
 )

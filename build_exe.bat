@@ -4,13 +4,19 @@ REM Build script for CoTag 1.1 using PyInstaller (project root)
 :: Usage: build_exe.bat [fast]
 ::   fast = incremental build (reuse cache, faster)
 
-:: Activate the virtual environment (adjust path if necessary)
-call "%~dp0.venv\Scripts\Activate.bat"
+:: Prefer venv python if present, otherwise fall back to system python
+set "VENV_PY=%~dp0.venv\Scripts\python.exe"
+if exist "%VENV_PY%" (
+    set "PYTHON=%VENV_PY%"
+) else (
+    set "PYTHON=python"
+)
+
 :check_pyinstaller
-python -m pip show pyinstaller >nul 2>&1
+%PYTHON% -m pip show pyinstaller >nul 2>&1
 if %ERRORLEVEL% neq 0 (
-    echo PyInstaller not found, installing into venv...
-    python -m pip install pyinstaller
+    echo PyInstaller not found for %PYTHON%, installing now...
+    %PYTHON% -m pip install pyinstaller
 )
 
 set "MODE=%1"
@@ -58,7 +64,7 @@ echo Using icon: %ICON_PATH% (size:)
 for %%I in ("%ICON_PATH%") do echo    %%~zI bytes, modified=%%~tI
 
 REM PyInstaller options: keep output concise and allow fast/incremental builds
-echo Running PyInstaller (this may take a while)...
-pyinstaller %CLEAN_FLAG% --noconfirm --log-level=%LOGLEVEL% --onefile --windowed --icon "%ICON_PATH%" --add-data "%ICON_PATH%;." --name "CoTag_1.1" "%~dp0src\main.py"
+echo Running PyInstaller via %PYTHON% (this may take a while)...
+%PYTHON% -m PyInstaller %CLEAN_FLAG% --noconfirm --log-level=%LOGLEVEL% --onefile --windowed --icon "%ICON_PATH%" --add-data "%ICON_PATH%;." --name "CoTag_1.1" "%~dp0src\main.py"
 
 echo Build finished. The executable is in the dist folder as CoTag_1.1.exe
