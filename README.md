@@ -2,6 +2,9 @@
 
 Short summary: CoTag — a small Windows GUI tool to inspect and edit ComicInfo.xml metadata inside CBZ/ZIP comic archive files.
 
+## Download
+- Windows one-file executable: https://github.com/iodides/CoTag/releases/download/v1.1/CoTag_1.1.exe
+
 This repository contains CoTag, a small Windows GUI tool to inspect and edit ComicInfo.xml metadata inside CBZ/ZIP comic archive files. The app is implemented in Python using PySide6 and lxml. It supports loading one or more .cbz/.zip files, viewing/editing common ComicInfo fields, batch-save, thumbnails and a full-size image viewer.
 
 ## Key features
@@ -72,9 +75,10 @@ Please add your preferred license file to the repository (e.g. `LICENSE`). This 
 
 ---
 
-한국어
-
 간단 요약: CoTag — CBZ/ZIP 아카이브 내의 ComicInfo.xml을 편집할 수 있는 Windows GUI 도구입니다.
+
+## 다운로드
+- Windows 단일 실행파일(.exe): https://github.com/iodides/CoTag/releases/download/v1.1/CoTag_1.1.exe
 
 이 저장소는 CoTag라는 간단한 Windows GUI 도구를 포함합니다. CoTag는 CBZ/ZIP 만화 아카이브 안의 ComicInfo.xml 메타데이터를 열람/수정할 수 있으며, Python (PySide6)과 lxml로 구현되어 있습니다. 다중 파일 로드, 공통 메타 동시 편집, 배치 저장, 썸네일 및 전체 크기 이미지 뷰어를 제공합니다.
 
@@ -138,7 +142,7 @@ build_exe.bat fast
 - `build_exe.bat` — 빌드 스크립트
 - `build/generate_multires_icon.py` — 멀티 사이즈 ICO 생성 스크립트
 
-## 기여
+- ## 기여
 PR 환영합니다. 작은 수정도 환영하며 변경 내용과 간단한 설명을 포함해 주세요.
 
 ## 라이선스
