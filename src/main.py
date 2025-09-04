@@ -83,47 +83,132 @@ def get_first_image_from_zip(path: Path) -> Optional[bytes]:
     return None
 
 
+def get_image_bytes_list_from_zip(path: Path) -> List[bytes]:
+    """Return raw bytes of all image files inside the zip in archive order."""
+    out: List[bytes] = []
+    try:
+        with zipfile.ZipFile(str(path), 'r') as z:
+            for n in z.namelist():
+                lower = n.lower()
+                if lower.endswith(('.png', '.jpg', '.jpeg', '.webp', '.bmp', '.gif')):
+                    try:
+                        out.append(z.read(n))
+                    except Exception:
+                        # skip unreadable entries
+                        continue
+    except Exception:
+        return []
+    return out
+
+
 class ClickableLabel(QtWidgets.QLabel):
     clicked = QtCore.Signal()
 
     def mousePressEvent(self, ev: QtGui.QMouseEvent) -> None:
         self.clicked.emit()
         super().mousePressEvent(ev)
+    
+    def keyPressEvent(self, ev: QtGui.QKeyEvent) -> None:
+        # forward key events to the top-level window (ImageViewer) so navigation keys work
+        try:
+            win = self.window()
+            if win and hasattr(win, 'keyPressEvent'):
+                win.keyPressEvent(ev)
+                return
+        except Exception:
+            pass
+        super().keyPressEvent(ev)
+
+    def wheelEvent(self, ev: QtGui.QWheelEvent) -> None:
+        # forward wheel events to the top-level window so scrolling can change pages
+        try:
+            win = self.window()
+            if win and hasattr(win, 'wheelEvent'):
+                win.wheelEvent(ev)
+                return
+        except Exception:
+            pass
+        super().wheelEvent(ev)
 
 
 class ImageViewer(QtWidgets.QDialog):
-    def __init__(self, pixmap: QtGui.QPixmap, parent=None):
+    def __init__(self, pixmaps: List[QtGui.QPixmap], index: int = 0, parent=None):
         super().__init__(parent)
         self.setWindowTitle('이미지 보기')
         # enable maximize button on the dialog
         self.setWindowFlags(self.windowFlags() | QtCore.Qt.Window | QtCore.Qt.WindowMaximizeButtonHint | QtCore.Qt.WindowCloseButtonHint)
         self.resize(800, 600)
 
+        self._pixmaps: List[QtGui.QPixmap] = pixmaps or []
+        self._idx: int = max(0, min(index, len(self._pixmaps) - 1)) if self._pixmaps else 0
+
         layout = QtWidgets.QVBoxLayout(self)
-        scroll = QtWidgets.QScrollArea()
-        scroll.setWidgetResizable(True)
+        self._scroll = QtWidgets.QScrollArea()
+        self._scroll.setWidgetResizable(True)
 
-        lbl = ClickableLabel()
-        lbl.setAlignment(QtCore.Qt.AlignCenter)
-
-        # store original pixmap and current label/scroll for resizing
-        self._orig_pixmap = pixmap
-        self._img_label = lbl
-        self._scroll = scroll
+        self._img_label = ClickableLabel()
+        self._img_label.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self._img_label.setAlignment(QtCore.Qt.AlignCenter)
 
         # clicking the image will accept() the dialog (close)
-        lbl.clicked.connect(self.accept)
-        scroll.setWidget(lbl)
-        layout.addWidget(scroll)
+        self._img_label.clicked.connect(self.accept)
+        self._scroll.setWidget(self._img_label)
+        layout.addWidget(self._scroll)
 
-        # initially scale to current viewport
+        # add navigation buttons under the image
+        nav_widget = QtWidgets.QWidget()
+        nav_layout = QtWidgets.QHBoxLayout(nav_widget)
+        nav_layout.setContentsMargins(0, 6, 0, 0)
+        nav_layout.setSpacing(8)
+        self.btn_prev = QtWidgets.QPushButton("◀")
+        self.btn_next = QtWidgets.QPushButton("▶")
+        self.btn_prev.setFixedWidth(40)
+        self.btn_next.setFixedWidth(40)
+        nav_layout.addStretch(1)
+        nav_layout.addWidget(self.btn_prev)
+        nav_layout.addWidget(self.btn_next)
+        nav_layout.addStretch(1)
+        layout.addWidget(nav_widget)
+
+        # page index label (centered under the image)
+        self._pos_label = QtWidgets.QLabel()
+        self._pos_label.setAlignment(QtCore.Qt.AlignCenter)
+        self._pos_label.setContentsMargins(0, 4, 0, 0)
+        layout.addWidget(self._pos_label)
+
+        # wire navigation
+        self.btn_prev.clicked.connect(self._show_prev)
+        self.btn_next.clicked.connect(self._show_next)
+
+        # initially show the selected image and focus the label so key events are delivered
+        if self._pixmaps:
+            self._orig_pixmap = self._pixmaps[self._idx]
+        else:
+            self._orig_pixmap = None
         QtCore.QTimer.singleShot(0, self._rescale_pixmap)
+        QtCore.QTimer.singleShot(0, self._img_label.setFocus)
+        QtCore.QTimer.singleShot(0, self._update_nav_buttons)
+
+    def wheelEvent(self, ev: QtGui.QWheelEvent) -> None:
+        # vertical wheel up -> previous, down -> next
+        delta = ev.angleDelta().y()
+        if delta > 0:
+            self._show_prev()
+        elif delta < 0:
+            self._show_next()
+        ev.accept()
 
     def keyPressEvent(self, ev: QtGui.QKeyEvent) -> None:
         if ev.key() == QtCore.Qt.Key_Escape:
             self.close()
-        else:
-            super().keyPressEvent(ev)
+            return
+        if ev.key() == QtCore.Qt.Key_Left:
+            self._show_prev()
+            return
+        if ev.key() == QtCore.Qt.Key_Right:
+            self._show_next()
+            return
+        super().keyPressEvent(ev)
 
     def resizeEvent(self, ev: QtGui.QResizeEvent) -> None:
         super().resizeEvent(ev)
@@ -146,6 +231,40 @@ class ImageViewer(QtWidgets.QDialog):
             return
         scaled = self._orig_pixmap.scaled(vp.width(), vp.height(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         self._img_label.setPixmap(scaled)
+
+    def _show_prev(self) -> None:
+        if not getattr(self, '_pixmaps', None):
+            return
+        if self._idx <= 0:
+            return
+        self._idx -= 1
+        self._orig_pixmap = self._pixmaps[self._idx]
+        self._rescale_pixmap()
+        self._update_nav_buttons()
+
+    def _show_next(self) -> None:
+        if not getattr(self, '_pixmaps', None):
+            return
+        if self._idx >= len(self._pixmaps) - 1:
+            return
+        self._idx += 1
+        self._orig_pixmap = self._pixmaps[self._idx]
+        self._rescale_pixmap()
+        self._update_nav_buttons()
+
+    def _update_nav_buttons(self) -> None:
+        total = len(getattr(self, '_pixmaps', []))
+        if total <= 1:
+            self.btn_prev.setEnabled(False)
+            self.btn_next.setEnabled(False)
+            return
+        self.btn_prev.setEnabled(self._idx > 0)
+        self.btn_next.setEnabled(self._idx < total - 1)
+        # update position label
+        try:
+            self._pos_label.setText(f"{self._idx + 1} / {total}")
+        except Exception:
+            pass
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -714,13 +833,34 @@ class MainWindow(QtWidgets.QMainWindow):
         thumb = pix.scaled(self.thumb_label.width(), self.thumb_label.height(), QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
         self.thumb_label.setPixmap(thumb)
     def show_full_image(self):
-        if not self._full_pixmap or self._full_pixmap.isNull():
+        # load all images from the currently selected archive and show viewer with navigation
+        rows = [r.row() for r in self.table.selectionModel().selectedRows()]
+        if not rows:
             return
-        dlg = ImageViewer(self._full_pixmap, self)
-        # open dialog at image original size but not larger than available screen geometry
+        idx = rows[0]
+        try:
+            fi = self.files[idx]
+        except Exception:
+            return
+
+        img_bytes_list = get_image_bytes_list_from_zip(fi.path)
+        if not img_bytes_list:
+            return
+
+        pixmaps: List[QtGui.QPixmap] = []
+        for b in img_bytes_list:
+            p = QtGui.QPixmap()
+            if p.loadFromData(b):
+                pixmaps.append(p)
+        if not pixmaps:
+            return
+
+        # open viewer with list of pixmaps, start at first image
+        dlg = ImageViewer(pixmaps, index=0, parent=self)
+        # open dialog at current image size but not larger than screen
         scr = QtWidgets.QApplication.primaryScreen().availableGeometry()
-        ow = self._full_pixmap.width()
-        oh = self._full_pixmap.height()
+        ow = pixmaps[0].width()
+        oh = pixmaps[0].height()
         w = min(ow, scr.width())
         h = min(oh, scr.height())
         dlg.resize(w, h)

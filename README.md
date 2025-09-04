@@ -3,7 +3,7 @@
 Short summary: CoTag — a small Windows GUI tool to inspect and edit ComicInfo.xml metadata inside CBZ/ZIP comic archive files.
 
 ## Download
-- Windows one-file executable: [CoTag_1.1.exe](https://github.com/iodides/CoTag/releases/download/v1.1/CoTag_1.1.exe)
+- Windows one-file executable: [CoTag.exe](https://github.com/iodides/CoTag/releases/download/v1.1/CoTag_1.1.exe)
 
 This repository contains CoTag, a small Windows GUI tool to inspect and edit ComicInfo.xml metadata inside CBZ/ZIP comic archive files. The app is implemented in Python using PySide6 and lxml. It supports loading one or more .cbz/.zip files, viewing/editing common ComicInfo fields, batch-save, thumbnails and a full-size image viewer.
 
@@ -26,6 +26,13 @@ This repository contains CoTag, a small Windows GUI tool to inspect and edit Com
 - Keyboard shortcuts: F2 renames the selected file in the list; when a metadata textbox has focus, `Ctrl+B` moves to the previous file and `Ctrl+N` moves to the next file.
 - Files are sorted naturally (numeric parts sort numerically) and multiple selection supports batch edits.
 
+ - Image viewer controls (when you click a thumbnail):
+  - Use the on-screen ◀ / ▶ buttons to move to the previous or next page.
+  - Keyboard: Left / Right arrows move pages; Esc closes the viewer.
+	- Mouse wheel: scroll up to go to the previous page, scroll down to go to the next page.
+	- Click the image to close the viewer.
+	- The viewer shows the current page index and total pages at the bottom center (e.g. "3 / 12").
+
  
 
 ## License
@@ -38,7 +45,7 @@ Note: This program was created using GPT-5 mini.
 간단 요약: CoTag — CBZ/ZIP 아카이브 내의 ComicInfo.xml을 편집할 수 있는 Windows GUI 도구입니다.
 
 ## 다운로드
-- Windows 단일 실행파일(.exe): [CoTag_1.1.exe](https://github.com/iodides/CoTag/releases/download/v1.1/CoTag_1.1.exe)
+- Windows 단일 실행파일(.exe): [CoTag.exe](https://github.com/iodides/CoTag/releases/download/v1.1/CoTag_1.1.exe)
 
 이 저장소는 CoTag라는 간단한 Windows GUI 도구를 포함합니다. CoTag는 CBZ/ZIP 만화 아카이브 안의 ComicInfo.xml 메타데이터를 열람/수정할 수 있으며, Python (PySide6)과 lxml로 구현되어 있습니다. 다중 파일 로드, 공통 메타 동시 편집, 배치 저장, 썸네일 및 전체 크기 이미지 뷰어를 제공합니다.
 
@@ -60,6 +67,13 @@ Note: This program was created using GPT-5 mini.
 - 썸네일은 아카이브의 첫 이미지를 사용하며, 썸네일을 클릭하면 전체 크기 뷰어가 열립니다.
 - 단축키: 목록에서 F2로 이름을 바꿀 수 있으며, 메타데이터 텍스트박스에 포커스가 있을 때 `Ctrl+B`로 이전 파일, `Ctrl+N`으로 다음 파일로 이동합니다.
 - 파일명은 자연수 정렬로 정렬되며, 다중 선택을 통해 일괄 편집이 가능합니다.
+
+ - 이미지 뷰어 사용법 (썸네일 클릭 시):
+  - 화면의 ◀ / ▶ 버튼으로 이전/다음 페이지로 이동합니다.
+  - 키보드: 좌/우 방향키로 페이지를 이동할 수 있으며, Esc로 뷰어를 닫습니다.
+	- 마우스 휠: 위로 스크롤하면 이전 페이지, 아래로 스크롤하면 다음 페이지로 이동합니다.
+	- 이미지를 클릭하면 뷰어가 닫힙니다.
+	- 뷰어 하단 중앙에 현재 페이지 / 전체 페이지 수(예: "3 / 12")가 표시됩니다.
 
  
 
