@@ -562,14 +562,18 @@ class MainWindow(QtWidgets.QMainWindow):
         return out
 
     def on_field_changed(self):
-        rows = {i.row() for i in self.table.selectedIndexes()}
-        selected = [self.files[r] for r in sorted(rows)]
-        if not selected:
+        # Update only the selected rows' metadata and their dirty/star indicator in-place
+        rows = sorted({i.row() for i in self.table.selectedIndexes()})
+        if not rows:
             return
+        selected = [self.files[r] for r in rows]
         cur = {k: v.text() for k, v in self.fields.items()}
         any_dirty = False
         changed_any = False
-        for it in selected:
+
+        # Update model entries for each selected file and update the star column in-place
+        self.table.blockSignals(True)
+        for row, it in zip(rows, selected):
             changed = False
             for k, v in cur.items():
                 if v == "<개별값>":
@@ -581,9 +585,18 @@ class MainWindow(QtWidgets.QMainWindow):
             if it.dirty != changed:
                 changed_any = True
                 it.dirty = changed
+                # update star cell for this row only
+                star_item = self.table.item(row, 0)
+                if star_item is None:
+                    star_item = QtWidgets.QTableWidgetItem("*" if it.dirty else "")
+                    star_item.setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
+                    self.table.setItem(row, 0, star_item)
+                else:
+                    star_item.setText("*" if it.dirty else "")
             any_dirty = any_dirty or changed
-        if changed_any:
-            self.refresh_table()
+        self.table.blockSignals(False)
+
+        # update buttons based on dirty state; do not rebuild the whole table to preserve selection
         self.btn_save.setEnabled(any_dirty)
         self.btn_save_all.setEnabled(any(fi.dirty for fi in self.files))
 
