@@ -1,5 +1,7 @@
 # CoTag
 
+![CoTag logo](resource/CoTag.png)
+
 Short summary: CoTag — a small Windows GUI tool to inspect and edit ComicInfo.xml metadata inside CBZ/ZIP comic archive files.
 
 ## Download
