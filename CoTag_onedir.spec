@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['D:\\vscode\\CoTag\\src\\main.py'],
+    ['src\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[('D:\\vscode\\CoTag\\resource\\CoTag.ico', '.')],
+    datas=[('resource\\CoTag.ico', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -19,21 +19,27 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
-    name='CoTag',
+    exclude_binaries=True,
+    name='CoTag_onedir',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=False,
-    upx_exclude=[],
-    runtime_tmpdir=None,
+    upx=True,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['D:\\vscode\\CoTag\\resource\\CoTag.ico'],
+    icon=['resource\\CoTag.ico'],
+)
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='CoTag_onedir',
 )

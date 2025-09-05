@@ -65,6 +65,6 @@ for %%I in ("%ICON_PATH%") do echo    %%~zI bytes, modified=%%~tI
 
 REM PyInstaller options: keep output concise and allow fast/incremental builds
 echo Running PyInstaller via %PYTHON% (this may take a while)...
-%PYTHON% -m PyInstaller %CLEAN_FLAG% --noconfirm --log-level=%LOGLEVEL% --onefile --windowed --icon "%ICON_PATH%" --add-data "%ICON_PATH%;." --name "CoTag" "%~dp0src\main.py"
+%PYTHON% -m PyInstaller %CLEAN_FLAG% --noconfirm --log-level=%LOGLEVEL% --onefile --noupx --windowed --icon "%ICON_PATH%" --add-data "%ICON_PATH%;." --name "CoTag" "%~dp0src\main.py"
 
 echo Build finished. The executable is in the dist folder as CoTag.exe
